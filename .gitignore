@@ -1,0 +1,14 @@
+# PARTYWIN
+.env
+.env.*
+!.env.example
+!.env.staging.example
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.db
+*.sqlite*
+backups/
+static/uploads/
+static/kyc/
+.DS_Store
