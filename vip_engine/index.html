@@ -60,11 +60,19 @@ button:disabled{opacity:.4;cursor:not-allowed}
 <button id="hold" disabled>Lock for 10 minutes</button>
 <div class="status" id="status" aria-live="polite"></div>
 <div id="holdPanel" hidden><p id="timer"></p><button class="secondary" id="release">Release table</button>
+<label for="customerEmail">Email for Paystack test checkout</label><input id="customerEmail" type="email" autocomplete="email" placeholder="you@example.com">
+<button class="secondary" id="paystackTest">Open Paystack TEST checkout</button>
 <label for="demoKey">Demo admin key (test only)</label><input id="demoKey" type="password" autocomplete="off" placeholder="Provided by demo operator">
 <button id="pay">Simulate test payment</button>
 <p class="small">This test-only action is disabled on production environments and requires a separately configured key.</p></div>
 </section>
 </div>
+<section class="panel" id="paystackStatusPanel" style="margin-top:16px">
+<h3>Paystack test payment status</h3>
+<p class="small">After paying in Paystack test mode, return to this page and check your order. Confirmation relies on Paystack's signed webhook plus independent transaction verification.</p>
+<button class="secondary" id="checkPaystackStatus">Check test payment status</button>
+<div class="status" id="paystackStatus" aria-live="polite"></div>
+</section>
 <section class="panel" id="passesSection" hidden style="margin-top:16px">
 <h3>Admission passes</h3><p>Each guest receives a unique single-use QR. A copied QR might be scanned first, but cannot admit a second person.</p>
 <div id="tickets" class="ticket-grid"></div>
@@ -124,6 +132,43 @@ $("pay").onclick=async()=>{try{
  }
  message("DEMO payment accepted. Issued "+r.passes.length+" single-use passes.");refresh();
  }catch(e){message(e.message,true);}};
+
+$("paystackTest").onclick=async()=>{try{
+ const email=$("customerEmail").value.trim();
+ if(!activeHold)throw Error("Lock a table first.");
+ const r=await call("/api/v1/checkout",{hold_id:activeHold.hold_id,email});
+ sessionStorage.setItem("partywin-paystack-reference",r.reference);
+ message("Opening Paystack TEST checkout. Return here to check verified payment status.");
+ window.location.assign(r.checkout_url);
+ }catch(e){message(e.message,true);}};
+$("checkPaystackStatus").onclick=async()=>{try{
+ const reference=sessionStorage.getItem("partywin-paystack-reference");
+ if(!reference)throw Error("No saved Paystack test checkout in this browser session.");
+ const r=await fetch("/api/v1/payments/"+encodeURIComponent(reference),
+   {headers:{"X-Guest-ID":guest},cache:"no-store"});
+ const info=await r.json();
+ if(!r.ok)throw Error(info.detail||"Unable to retrieve status.");
+ $("paystackStatus").textContent="Payment status: "+info.status;
+ if(info.status==="confirmed"&&info.order_id){
+   const res=await fetch("/api/v1/orders/"+encodeURIComponent(info.order_id)+"/passes",
+      {headers:{"X-Guest-ID":guest},cache:"no-store"});
+   const data=await res.json();
+   if(!res.ok)throw Error(data.detail||"Unable to retrieve passes.");
+   $("passesSection").hidden=false;$("tickets").replaceChildren();
+   for(const p of data.passes) {
+     const box=document.createElement("div");box.className="ticket";
+     const title=document.createElement("b");title.textContent="Guest "+p.guest_number;
+     const img=document.createElement("img");
+     img.src="/api/v1/tickets/qr?token="+encodeURIComponent(p.token);
+     img.alt="Guest "+p.guest_number+" QR pass";
+     const btn=document.createElement("button");btn.className="secondary";
+     btn.textContent="Copy token";btn.onclick=()=>navigator.clipboard.writeText(p.token);
+     box.append(title,img,btn);$("tickets").append(box);
+   }
+ } else if(info.status==="payment_exception"){
+   $("paystackStatus").textContent="Payment exception: contact demo operator. No passes issued.";
+ }
+ }catch(e){$("paystackStatus").textContent=e.message;}};
 $("scan").onclick=async()=>{try{const token=$("scanToken").value.replace(/^partywin-v1:/,"");
  const r=await call("/api/v1/tickets/check-in",{event_id:"event_demo_001",token},{"X-Scanner-Key":$("scannerKey").value});
  $("scanResult").textContent=r.result+(r.admitted!==undefined?" • "+r.admitted+"/"+r.total+" admitted":"");
