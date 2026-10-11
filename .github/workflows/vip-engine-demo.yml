@@ -1,0 +1,22 @@
+name: Partywin VIP Demo QA
+
+on:
+  push:
+    branches: [feature/vip-engine-v1-demo]
+  pull_request:
+    branches: [staging]
+
+jobs:
+  vip-demo-tests:
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV: development
+      VIP_DEMO_MODE: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r vip_engine/requirements.txt
+      - run: python -m compileall -q vip_engine/
+      - run: pytest -q vip_engine/test_*.py
