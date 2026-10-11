@@ -20,7 +20,9 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
+import qrcode
+from qrcode.image.svg import SvgImage
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parent
@@ -205,7 +207,7 @@ def hold(body: HoldIn, x_guest_id: str | None = Header(default=None)):
         if not table:
             raise HTTPException(404, "Table not found")
         hold_count = db.execute(
-          "SELECT COUNT(*) FROM holds WHERE guest_id=? AND created_at>?",
+          "SELECT COUNT(*) FROM holds WHERE guest_id=? AND created_at>? AND status <> "confirmed"",
           (guest, current - 900)
         ).fetchone()[0]
         if hold_count >= 3:
@@ -258,7 +260,7 @@ def confirm_paid_hold(db, hold_id: str, paid_at: int):
       SELECT 1 FROM holds WHERE event_id=? AND table_id=? AND hold_id<>?
       AND (status='confirmed' OR (status='held' AND expires_at>?)) LIMIT 1
     """, (row["event_id"], row["table_id"], hold_id, t)).fetchone()
-    if row["status"] != "held" or paid_at > row["expires_at"] or another:
+    if row["status"] not in ("held", "expired") or paid_at > row["expires_at"] or another:
         reason = "late_or_conflicting_payment"
         db.execute("INSERT INTO payment_exceptions VALUES (?,?,?,?)",
                    (secrets.token_urlsafe(16), hold_id, reason, t))
@@ -323,3 +325,17 @@ def check_in(body: CheckInIn, x_scanner_key: str | None = Header(default=None)):
 def health():
     initialize()
     return {"status": "ok", "mode": "isolated_demo", "real_payments_enabled": False}
+
+
+@app.get("/api/v1/tickets/qr")
+def ticket_qr(token: str):
+    """Generate a test QR. The token is bearer-like; do not log ticket URLs."""
+    if not DEMO_ENABLED:
+        raise HTTPException(404, "Demo QR disabled")
+    if len(token) < 20 or len(token) > 256:
+        raise HTTPException(400, "Invalid token format")
+    img = qrcode.make("partywin-v1:" + token, image_factory=SvgImage)
+    return Response(
+        content=img.to_string(), media_type="image/svg+xml",
+        headers={"Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer"}
+    )
