@@ -44,3 +44,20 @@ pip install -r vip_engine/requirements.txt
 pytest -q vip_engine/test_app.py
 
 Keep the main Stage 8 app unchanged until review and integration are complete.
+
+
+## Paystack TEST-only checkout (additive QA adapter)
+
+Set \`VIP_DEMO_MODE=true\`, \`APP_ENV=development\`, \`PAYSTACK_SECRET_KEY=sk_test_...\`, and \`VIP_TICKET_FERNET_KEY\` (a Fernet key from \`python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'\`). Keep all secrets in protected server environment variables; never commit credentials.
+
+- \`POST /api/v1/checkout\` accepts a valid unexpired \`hold_id\` and customer email, derives table pricing from the server, and uses Paystack's **test** transaction initialization. Returns a Paystack-owned HTTPS checkout URL.
+- \`POST /api/v1/paystack/webhook\` verifies \`x-paystack-signature = HMAC_SHA512(raw_body, PAYSTACK_SECRET_KEY)\`, independently GETs the transaction by reference, checks \`domain=test\`, \`status=success\`, reference, NGN and exact kobo amount, and compares provider \`paid_at\` with hold expiry. No keys are accepted if they start with \`sk_live_\`.
+- \`GET /api/v1/payments/{reference}\` returns the demo guest's status and confirmed order ID.
+- \`GET /api/v1/orders/{order_id}/passes\` lets the same demo session retrieve Fernet-encrypted guest pass tokens after a confirmed test transaction. A stronger authenticated session must replace \`X-Guest-ID\` before real usage.
+- Duplicate webhook deliveries do not generate duplicate orders or passes. Missing or contradictory provider verification never confirms a booking.
+
+**Webhook signature is not a separate secret**: Paystack signs the raw event body with your Paystack secret API key. Add the public HTTPS webhook endpoint through the Paystack test dashboard only **after** the service has been secured and intentionally deployed; this prototype is **not deployed**.
+
+This adapter intentionally does **not** initiate real refunds, dispatch WhatsApp messages, implement durable background notification delivery, reconcile indefinite checkout initialization failures, or change Partywin's existing Stage 8 app. In a production integration, use PostgreSQL, provider event IDs, a durable outbox, authenticated users, production-ready scanners and operational exception handling.
+
+For tests: \`pytest -q vip_engine/test_app.py vip_engine/test_paystack.py\`.
