@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partywin • VIP Table Demo</title>
+<style>
+:root{color-scheme:dark;--bg:#10100f;--panel:#1d1c19;--line:#3f3a31;--gold:#f0be6c;--txt:#f6f1e8;--muted:#aca595}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#30261c,var(--bg) 55%);color:var(--txt);font:15px system-ui,-apple-system,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:24px 16px 70px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:18px}
+.brand{font-size:22px;font-weight:900;letter-spacing:.08em}.brand em{color:var(--gold);font-style:normal}.pill{background:#2e2415;border:1px solid #9c773e;color:var(--gold);padding:7px 10px;border-radius:20px;font-size:12px}
+h1{font-size:clamp(30px,5vw,52px);line-height:1.08;margin:30px 0 10px}p{color:var(--muted);line-height:1.5}
+.layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(275px,1fr);gap:16px;margin-top:24px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}
+.map{width:100%;background:#161513;border:1px solid #34312a;border-radius:12px}
+.map text{font:16px system-ui;fill:#cabba3;text-anchor:middle}
+.map .table{cursor:pointer;stroke-width:3;transition:fill .2s}
+.map .table.available{fill:#76552c;stroke:#f0be6c}.map .table.unavailable{fill:#4d2d2d;stroke:#ae6a6a}
+.map .table.selected{fill:#c18a41;stroke:#fff6e8}
+.map .tlabel{font-weight:bold;fill:#fff;pointer-events:none}
+label{display:block;font-size:13px;color:var(--muted);margin:16px 0 6px}input{width:100%;padding:11px;border-radius:10px;background:#13120f;color:var(--txt);border:1px solid var(--line)}
+button{width:100%;background:var(--gold);border:none;border-radius:11px;padding:13px 12px;margin-top:10px;font-weight:800;color:#211a10;cursor:pointer}
+button.secondary{background:transparent;border:1px solid var(--line);color:var(--txt)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.price{font-size:30px;font-weight:900;color:var(--gold)}.muted{color:var(--muted)}.status{min-height:44px;padding-top:12px;line-height:1.5}.error{color:#ffb0a2}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.small{font-size:12px}
+.ticket-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:12px;margin-top:15px}
+.ticket{background:#111;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+.ticket img{display:block;width:100%;background:#fff;margin:8px auto;border-radius:5px}
+.ticket code{word-break:break-all;font-size:10px}
+@media(max-width:750px){.layout{grid-template-columns:1fr}.panel{padding:14px}}
+</style></head><body><main>
+<div class="top"><div class="brand">PARTY<em>WIN</em></div><span class="pill">V1 • DEMO MODE ONLY</span></div>
+<h1>Own the night.<br>Pick your table.</h1>
+<p>Explore our fictional Port Harcourt venue. Choose a VIP table, lock it for ten minutes, and try the single-use QR check-in workflow. No real money is collected.</p>
+<div class="layout">
+<section class="panel"><h3>Demo Lounge • Floor map</h3>
+<svg class="map" viewBox="0 0 1000 640" role="img" aria-label="Floor plan with Table 12 and Table 13">
+<rect x="24" y="24" width="952" height="592" fill="none" stroke="#65553c" stroke-width="3" rx="16"/>
+<rect x="345" y="40" width="310" height="120" rx="12" fill="#3c2c23" stroke="#997341" stroke-width="3"/>
+<text x="500" y="110">DJ / STAGE</text>
+<rect x="55" y="180" width="150" height="310" rx="12" fill="#292620"/>
+<text x="130" y="330">BAR</text>
+<rect x="780" y="180" width="150" height="310" rx="12" fill="#292620"/>
+<text x="850" y="330">LOUNGE</text>
+<path d="M250 240H740" stroke="#534b3e" stroke-width="2" stroke-dasharray="10 12"/>
+<circle id="map-T12" class="table available" cx="330" cy="335" r="77" tabindex="0" role="button" aria-label="Select Table 12"/>
+<text class="tlabel" x="330" y="340">T12</text>
+<rect id="map-T13" class="table available" x="600" y="270" width="160" height="130" rx="20" tabindex="0" role="button" aria-label="Select Table 13"/>
+<text class="tlabel" x="680" y="340">T13</text>
+<rect x="405" y="532" width="190" height="72" rx="8" fill="#362f24"/>
+<text x="500" y="576">ENTRANCE ↓</text>
+</svg>
+<p class="small">Illustrative positions only. A real venue requires an authorized, verified floor plan.</p>
+<button class="secondary" id="refresh">Refresh live table status</button>
+</section>
+<section class="panel">
+<h3>Your VIP reservation</h3>
+<p class="muted" id="chosen">Tap a table on the map to get started.</p>
+<div class="price" id="price">—</div><p id="details" class="small">Prices are total per table, not per person.</p>
+<button id="hold" disabled>Lock for 10 minutes</button>
+<div class="status" id="status" aria-live="polite"></div>
+<div id="holdPanel" hidden><p id="timer"></p><button class="secondary" id="release">Release table</button>
+<label for="demoKey">Demo admin key (test only)</label><input id="demoKey" type="password" autocomplete="off" placeholder="Provided by demo operator">
+<button id="pay">Simulate test payment</button>
+<p class="small">This test-only action is disabled on production environments and requires a separately configured key.</p></div>
+</section>
+</div>
+<section class="panel" id="passesSection" hidden style="margin-top:16px">
+<h3>Admission passes</h3><p>Each guest receives a unique single-use QR. A copied QR might be scanned first, but cannot admit a second person.</p>
+<div id="tickets" class="ticket-grid"></div>
+</section>
+<section class="panel" id="scannerSection" style="margin-top:16px">
+<h3>Door scanner simulator</h3><p>Enter a scanner key, then paste a guest token to simulate authenticated door entry. Online verification is required.</p>
+<div class="cards"><div><label for="scannerKey">Scanner key</label><input type="password" id="scannerKey"></div>
+<div><label for="scanToken">Ticket token</label><input id="scanToken" autocomplete="off"></div></div>
+<button id="scan">Check in guest</button><div class="status" id="scanResult" aria-live="polite"></div>
+</section>
+<p class="small">Isolated QA prototype. Not yet integrated with the existing Partywin Stage 8 application, Paystack, or WhatsApp Cloud API.</p>
+</main><script>
+const $ = (id) => document.getElementById(id);
+let guest = sessionStorage.getItem("partywin-demo-guest");
+if (!guest) { guest = crypto.randomUUID(); sessionStorage.setItem("partywin-demo-guest",guest); }
+let chosen = null, activeHold = null, tableList = [];
+function fmt(kobo){return "₦"+(kobo/100).toLocaleString("en-NG",{maximumFractionDigits:2});}
+function message(v,error=false){$("status").textContent=v;$("status").className="status"+(error?" error":"");}
+async function call(url,data,headers={}) {
+  const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","X-Guest-ID":guest,...headers},body:JSON.stringify(data)});
+  const val=await res.json(); if(!res.ok)throw new Error(typeof val.detail==="string"?val.detail:"Request failed"); return val;
+}
+async function refresh(){
+ const r=await fetch("/api/v1/demo/event",{cache:"no-store"}); const v=await r.json();tableList=v.tables;
+ for(const t of tableList){const el=$("map-"+t.table_id);el.setAttribute("class","table "+(t.status==="available"?"available":"unavailable")+(chosen===t.table_id?" selected":""));}
+ if(chosen)select(chosen,false);
+}
+function select(id,refreshView=true){
+ chosen=id;const t=tableList.find(x=>x.table_id===id);if(!t)return;
+ $("chosen").textContent="Table "+id.replace("T","")+" • "+t.zone;
+ $("price").textContent=fmt(t.price_kobo);
+ $("details").textContent=t.capacity+" guests TOTAL • Price for the entire table";
+ $("hold").disabled=t.status!=="available" || !!activeHold;
+ if(refreshView)refresh().catch(e=>message(e.message,true));
+}
+for(const id of ["T12","T13"]){const el=$("map-"+id);el.addEventListener("click",()=>select(id));
+el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();select(id);}});}
+$("refresh").onclick=()=>refresh().catch(e=>message(e.message,true));
+$("hold").onclick=async()=>{try{
+ const data=await call("/api/v1/hold",{event_id:"event_demo_001",table_id:chosen,client_action_id:crypto.randomUUID()});
+ activeHold=data;$("holdPanel").hidden=false;$("hold").disabled=true;
+ message("Table locked until "+new Date(data.expires_at*1000).toLocaleTimeString("en-NG",{timeZone:"Africa/Lagos",hour:"2-digit",minute:"2-digit"})+" WAT.");refresh();
+ }catch(e){message(e.message,true);refresh();}};
+$("release").onclick=async()=>{try{const r=await call("/api/v1/release",{hold_id:activeHold.hold_id});
+ message("Reservation "+r.status);activeHold=null;$("holdPanel").hidden=true;refresh();}catch(e){message(e.message,true);}};
+$("pay").onclick=async()=>{try{
+ const r=await call("/api/v1/demo/pay",{hold_id:activeHold.hold_id},{"X-Demo-Admin-Key":$("demoKey").value});
+ if(r.status!=="confirmed"){message("Payment exception: do not issue passes.",true);return;}
+ activeHold=null;$("holdPanel").hidden=true;$("passesSection").hidden=false;
+ $("tickets").replaceChildren();
+ for(const p of r.passes){
+ const box=document.createElement("div");box.className="ticket";
+ const title=document.createElement("b");title.textContent="Guest "+p.guest_number;
+ const img=document.createElement("img");img.src="/api/v1/tickets/qr?token="+encodeURIComponent(p.token);img.alt="QR pass "+p.guest_number;
+ const btn=document.createElement("button");btn.className="secondary";btn.textContent="Copy token";btn.onclick=()=>navigator.clipboard.writeText(p.token);
+ box.append(title,img,btn);$("tickets").append(box);
+ }
+ message("DEMO payment accepted. Issued "+r.passes.length+" single-use passes.");refresh();
+ }catch(e){message(e.message,true);}};
+$("scan").onclick=async()=>{try{const token=$("scanToken").value.replace(/^partywin-v1:/,"");
+ const r=await call("/api/v1/tickets/check-in",{event_id:"event_demo_001",token},{"X-Scanner-Key":$("scannerKey").value});
+ $("scanResult").textContent=r.result+(r.admitted!==undefined?" • "+r.admitted+"/"+r.total+" admitted":"");
+ }catch(e){$("scanResult").textContent=e.message;}};
+setInterval(()=>{if(!activeHold)return;const seconds=Math.max(0,activeHold.expires_at-Math.floor(Date.now()/1000));
+ $("timer").textContent="Hold remaining: "+Math.floor(seconds/60)+":"+String(seconds%60).padStart(2,"0");
+ if(!seconds){activeHold=null;$("holdPanel").hidden=true;message("Hold expired. Re-lock if available.");refresh().catch(()=>{});}},1000);
+refresh().catch(e=>message(e.message,true));
+</script></body></html>
