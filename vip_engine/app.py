@@ -339,3 +339,8 @@ def ticket_qr(token: str):
         content=img.to_string(), media_type="image/svg+xml",
         headers={"Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer"}
     )
+
+
+# Keep the Paystack integration in a separately isolated QA module.
+from .paystack_integration import router as paystack_test_router
+app.include_router(paystack_test_router)
