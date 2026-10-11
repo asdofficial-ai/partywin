@@ -207,7 +207,7 @@ def hold(body: HoldIn, x_guest_id: str | None = Header(default=None)):
         if not table:
             raise HTTPException(404, "Table not found")
         hold_count = db.execute(
-          "SELECT COUNT(*) FROM holds WHERE guest_id=? AND created_at>? AND status <> "confirmed"",
+          "SELECT COUNT(*) FROM holds WHERE guest_id=? AND created_at>? AND status <> 'confirmed'",
           (guest, current - 900)
         ).fetchone()[0]
         if hold_count >= 3:
