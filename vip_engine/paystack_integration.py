@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import os
 import re
 import secrets
@@ -153,7 +154,7 @@ def paystack_checkout(body: CheckoutIn, x_guest_id: str | None = Header(default=
             "amount": str(amount),
             "currency": "NGN",
             "reference": reference,
-            "metadata": {"hold_id": body.hold_id, "source": "partywin-vip-qa"}
+            "metadata": json.dumps({"hold_id": body.hold_id, "source": "partywin-vip-qa"})
         })
     except (httpx.HTTPError, ValueError) as err:
         # Deliberately retain the reference in 'initializing': network uncertainty
@@ -256,12 +257,16 @@ async def paystack_webhook(request: Request,
     if not verify_signature(raw_body, x_paystack_signature, key):
         raise HTTPException(401, "Webhook signature invalid")
     try:
-        event = __import__("json").loads(raw_body)
+        event = json.loads(raw_body)
     except (ValueError, UnicodeDecodeError):
         raise HTTPException(400, "Invalid JSON")
+    if not isinstance(event, dict):
+        raise HTTPException(400, "Unexpected webhook JSON shape")
     if event.get("event") != "charge.success":
         return {"status": "ignored"}
-    data = event.get("data") or {}
+    data = event.get("data")
+    if not isinstance(data, dict):
+        raise HTTPException(400, "Invalid event data")
     reference = data.get("reference", "")
     if not isinstance(reference, str):
         raise HTTPException(400, "Invalid reference")
