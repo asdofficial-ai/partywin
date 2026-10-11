@@ -1,0 +1,217 @@
+{
+  "review_status": "DRAFT — examples, not submitted or Meta-approved",
+  "base_domain": "partywin.ng (must verify Partywin controls it before submission)",
+  "api": "POST /{WABA-ID}/message_templates",
+  "templates": [
+    {
+      "name": "partywin_vip_invite_v1",
+      "language": "en_US",
+      "category": "MARKETING",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Hi {{1}}! 👋 Explore {{2}} at {{3}} on {{4}}. Open the Partywin venue map to see available tables and total prices. No booking is held until you confirm your selection. Reply STOP to opt out.",
+          "example": {
+            "body_text": [
+              [
+                "Amaka",
+                "Rooftop Night",
+                "Demo Lounge",
+                "18 December 2026"
+              ]
+            ]
+          }
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "URL",
+              "text": "View Event",
+              "url": "https://partywin.ng/e/{{1}}",
+              "example": [
+                "event-demo-001"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "partywin_hold_reminder_v1",
+      "language": "en_US",
+      "category": "UTILITY",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "{{1}}, your {{2}} at {{3}} is reserved until {{4}} WAT. Total: NGN {{5}} for {{6}} guests. Open your booking link to check the current status and pay if the hold remains active.",
+          "example": {
+            "body_text": [
+              [
+                "Amaka",
+                "Table 12",
+                "Demo Lounge",
+                "9:42 PM",
+                "200,000",
+                "6"
+              ]
+            ]
+          }
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "URL",
+              "text": "View Booking",
+              "url": "https://partywin.ng/hold/{{1}}",
+              "example": [
+                "signed-demo-booking-key"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "partywin_ticket_confirmed_v1",
+      "language": "en_US",
+      "category": "UTILITY",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Payment confirmed, {{1}}! 🥂 {{2}} at {{3}}: {{4}}, {{5}} guests. Order: {{6}}. Each guest needs a separate valid pass. View your passes using your secure booking link. One pass allows one successful entry.",
+          "example": {
+            "body_text": [
+              [
+                "Amaka",
+                "Rooftop Night",
+                "Demo Lounge",
+                "Table 12",
+                "6",
+                "PW-EXAMPLE-234"
+              ]
+            ]
+          }
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "URL",
+              "text": "View Passes",
+              "url": "https://partywin.ng/tickets/{{1}}",
+              "example": [
+                "signed-demo-order-key"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "partywin_payment_failed_v1",
+      "language": "en_US",
+      "category": "UTILITY",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "{{1}}, the payment attempt for {{2}} was unsuccessful. Your table reservation lasts until {{3}} WAT if still available. If your bank shows a pending debit, please check your booking status before trying again.",
+          "example": {
+            "body_text": [
+              [
+                "Amaka",
+                "Table 12",
+                "9:42 PM"
+              ]
+            ]
+          }
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "URL",
+              "text": "View Booking",
+              "url": "https://partywin.ng/hold/{{1}}",
+              "example": [
+                "signed-demo-booking-key"
+              ]
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "Get Help"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "partywin_payment_pending_v1",
+      "language": "en_US",
+      "category": "UTILITY",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "{{1}}, we're still verifying your payment for {{2}}. Please do not pay twice while the transaction is pending. Follow the secure link for your latest payment status.",
+          "example": {
+            "body_text": [
+              [
+                "Amaka",
+                "Table 12"
+              ]
+            ]
+          }
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "URL",
+              "text": "Check Payment",
+              "url": "https://partywin.ng/payments/{{1}}",
+              "example": [
+                "signed-demo-payment-key"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "partywin_payment_exception_v1",
+      "language": "en_US",
+      "category": "UTILITY",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "{{1}}, we received a payment for {{2}}, but your reservation could not be confirmed. Exception {{3}}. Amount: NGN {{4}}. Refund status: {{5}}. Our support team will help resolve it. Please do not attempt a second payment yet.",
+          "example": {
+            "body_text": [
+              [
+                "Amaka",
+                "Table 12",
+                "PEX-EXAMPLE-234",
+                "200,000",
+                "review pending"
+              ]
+            ]
+          }
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "URL",
+              "text": "View Case",
+              "url": "https://partywin.ng/support/case/{{1}}",
+              "example": [
+                "signed-demo-case-key"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
