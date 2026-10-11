@@ -19,4 +19,4 @@ jobs:
           python-version: "3.13"
       - run: pip install -r vip_engine/requirements.txt
       - run: python -m compileall -q vip_engine/
-      - run: pytest -q vip_engine/test_app.py
+      - run: pytest -q vip_engine/test_app.py vip_engine/test_paystack.py
